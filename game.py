@@ -12,13 +12,13 @@ pygame.display.set_caption("Klondike Solitaire")
 clock=pygame.time.Clock()
 
 BLACK=(0,0,0)
-GREEN_background=(18,97,46)
-GREEN_title=(35,124,17)
+GREEN_BACKGROUND=(18,97,46)
+GREEN_TITLE=(35,124,17)
 WHITE=(255,255,255)
 GREEN=(0,200,0)
 YELLOW=(255,255,0)
 RED=(220,0,0)
-GRAY_bar=(70,70,70)
+GREY_BAR=(70,70,70)
 BLUE=(40,120,255)
 
 current_theme="light"
@@ -29,9 +29,9 @@ def apply_theme():
     else:
         return "back_blue"
 
-title_font = pygame.font.Font('PressStart2P-Regular.ttf', 42)
-button_font = pygame.font.Font('PressStart2P-Regular.ttf', 22)
-small_font = pygame.font.Font('PressStart2P-Regular.ttf', 14)
+title_font=pygame.font.Font('PressStart2P-Regular.ttf',42)
+button_font=pygame.font.Font('PressStart2P-Regular.ttf',22)
+small_font=pygame.font.Font('PressStart2P-Regular.ttf',14)
 
 conn=sqlite3.connect('solitaire.db')
 cursor=conn.cursor()
@@ -101,7 +101,7 @@ def extract_time():
     return time
 
 class Card:
-    def __init__(self, suit, rank, image):
+    def __init__(self,suit,rank,image):
         self.suit=suit
         self.rank=rank
         self.image=image
@@ -113,22 +113,22 @@ def load_cards_from_folder():
     card_dict={}
     for suit in suits:
         for rank in ranks:
-            filename=f"cards_120x170/{rank}_{suit}.png"
+            filename=f"smaller/{rank}_{suit}.png"
             try:
                 image=pygame.image.load(filename).convert_alpha()
                 card_dict[f"{rank}_{suit}"]=Card(rank,suit,image)
             except:
                 print("Missing:",filename)
 
-    card_dict["back_red"]=Card("back","red",pygame.image.load("cards_120x170/rewers_czerwony.png").convert_alpha())
-    card_dict["back_blue"] = Card("back","blue",pygame.image.load("cards_120x170/rewers_niebieski.png").convert_alpha())
+    card_dict["back_red"]=Card("back","red",pygame.image.load("smaller/rewers_czerwony.png").convert_alpha())
+    card_dict["back_blue"] = Card("back","blue",pygame.image.load("smaller/rewers_niebieski.png").convert_alpha())
     return card_dict
 
 cards=load_cards_from_folder()
 all_cards=list(cards.values())
 test_draw_pile=all_cards[:24]
 test_waste_pile=[]
-test_foundations={"PIK":None,"KIER":None,"KARO":None,"TREFL":None}
+test_foundations={"♠️":None, "♥️":None, "♦️":None, "♣️":None}
 test_tableau=[]
 index=24
 for pile_size in range(1,8):
@@ -142,19 +142,19 @@ for pile_size in range(1,8):
 difficulty='EASY'
 drawn_amount=1
 current_screen='menu'
+game_timer=0
 
 start_button=pygame.Rect(0,0,250,70)
 difficulty_button=pygame.Rect(0,0,250,70)
 stats_button=pygame.Rect(0,0,250,70)
+exit_button=pygame.Rect(0,0,120,40)
 back_button=pygame.Rect(0,0,120,40)
-
-game_timer=0
 
 def game_page():
     global current_theme
     Top_bar_height=70
     Top_bar_surface=pygame.Surface((width,Top_bar_height),pygame.SRCALPHA)
-    Top_bar_surface.fill(GRAY_bar)
+    Top_bar_surface.fill(GREY_BAR)
     back_button=pygame.Rect(20,15,120,40)
     save_button=pygame.Rect(160,15,120,40)
     theme_button=pygame.Rect(300,15,160,40)
@@ -169,7 +169,7 @@ def game_page():
     for i in range(7):
         tableau_piles.append(pygame.Rect(tableau_x+i*170,300,90,130))
     card_back_key=apply_theme()
-    screen.fill(GREEN_background)
+    screen.fill(GREEN_BACKGROUND)
     screen.blit(Top_bar_surface,(0,0))
     pygame.draw.rect(screen,RED,back_button)
     pygame.draw.rect(screen,BLUE,save_button)
@@ -184,7 +184,7 @@ def game_page():
         screen.blit(test_waste_pile[-1].image,waste_pile_rect.topleft)
     else:
         pygame.draw.rect(screen,WHITE,waste_pile_rect,3)
-    foundation_suits=["PIK", "KIER", "KARO", "TREFL"]
+    foundation_suits=["♠️", "♥️", "♦️", "♣️"]
     for i, pile in enumerate(foundations_piles):
         suit=foundation_suits[i]
         if test_foundations[suit] is None:
@@ -198,22 +198,25 @@ def game_page():
         if i<len(test_tableau):
             y_offset=0
             for card in test_tableau[i]:
-                screen.blit(card.image,(pile.x,pile.y+y_offset))
+                screen.blit(cards[card_back_key].image,(pile.x,pile.y+y_offset))
                 y_offset+=30
 
 def menu_page():
     screen.fill(BLACK)
-    title_text=title_font.render('Klondike Solitaire',True,GREEN_title)
+    title_text=title_font.render('Klondike Solitaire',True,GREEN_TITLE)
     screen.blit(title_text,title_text.get_rect(center=(width//2,120)))
     start_button.center=(width//2,260)
     difficulty_button.center=(width//2,360)
     stats_button.center=(width//2,460)
+    exit_button.center=(width-90,50)
     pygame.draw.rect(screen,GREEN,start_button)
     pygame.draw.rect(screen,YELLOW,difficulty_button)
     pygame.draw.rect(screen,RED,stats_button)
+    pygame.draw.rect(screen,RED,exit_button)
     screen.blit(button_font.render("START",True,BLACK),start_button.move(70,20))
     screen.blit(button_font.render(difficulty,True,BLACK),difficulty_button.move(70,20))
     screen.blit(button_font.render("STATS",True,BLACK),stats_button.move(70,20))
+    screen.blit(button_font.render('EXIT',True,BLACK),exit_button.move(20,10))
 
 def stats_diagram():
     screen.fill(BLACK)
@@ -267,6 +270,10 @@ while running:
                         drawn_amount=1
                 if stats_button.collidepoint(mouse_pos):
                     current_screen='stats'
+                if exit_button.collidepoint(mouse_pos):
+                    pygame.quit()
+                    conn.close()
+                    sys.exit()
             elif current_screen=='stats':
                 if back_button.collidepoint(mouse_pos):
                     current_screen='menu'
